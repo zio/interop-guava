@@ -11,21 +11,21 @@ import zio.interop.guava._
 class guavaSpec(implicit ee: ExecutionEnv) extends TestRuntime {
 
   def is = s2"""
-  `Task.fromFutureJava` must
+  `Task.fromListenableFuture` must
     be lazy on the `Future` parameter                    $lazyOnParamRef
     catch exceptions thrown by lazy block                $catchBlockException
     return an `IO` that fails if `Future` fails 1        $propagateExceptionFromFuture1
     return an `IO` that fails if `Future` fails 2        $propagateExceptionFromFuture2
     return an `IO` that produces the value from `Future` $produceValueFromFuture
     handle null produced by the completed `Future`       $handleNullFromFuture
-  `Task.toCompletableFuture` must
-    produce always a successful `IO` of `Future`         $toCompletableFutureAlwaysSucceeds
-    be polymorphic in error type                         $toCompletableFuturePoly
-    return a `CompletableFuture` that fails if `IO` fails           $toCompletableFutureFailed
-    return a `CompletableFuture` that produces the value from `IO`  $toCompletableFutureValue
-  `Task.toCompletableFutureE` must
-    convert error of type `E` to `Throwable`             $toCompletableFutureE
-  `Fiber.fromFutureJava` must
+  `Task.toListenableFuture` must
+    produce always a successful `IO` of `Future`         $toListenableFutureAlwaysSucceeds
+    be polymorphic in error type                         $toListenableFuturePoly
+    return a `ListenableFuture` that fails if `IO` fails           $toListenableFutureFailed
+    return a `ListenableFuture` that produces the value from `IO`  $toListenableFutureValue
+  `Task.toListenableFutureWith` must
+    convert error of type `E` to `Throwable`             $toListenableFutureWith
+  `Fiber.fromListenableFuture` must
     be lazy on the `Future` parameter                    $lazyOnParamRefFiber
     catch exceptions thrown by lazy block                $catchBlockExceptionFiber
     return an `IO` that fails if `Future` fails 1        $propagateExceptionFromFutureFiber1
@@ -76,29 +76,29 @@ class guavaSpec(implicit ee: ExecutionEnv) extends TestRuntime {
     unsafeRun(Task.fromListenableFuture[String](someValue)) must_=== null
   }
 
-  def toCompletableFutureAlwaysSucceeds = {
+  def toListenableFutureAlwaysSucceeds = {
     val failedIO = IO.fail[Throwable](new Exception("IOs also can fail"))
     unsafeRun(failedIO.toListenableFuture) must beAnInstanceOf[ListenableFuture[Unit]]
   }
 
-  def toCompletableFuturePoly = {
+  def toListenableFuturePoly = {
     val unitIO: Task[Unit]                         = Task.unit
     val polyIO: IO[String, ListenableFuture[Unit]] = unitIO.toListenableFuture
     val _                                          = polyIO // avoid warning
     ok
   }
 
-  def toCompletableFutureFailed = {
+  def toListenableFutureFailed = {
     val failedIO: Task[Unit] = IO.fail[Throwable](new Exception("IOs also can fail"))
     unsafeRun(failedIO.toListenableFuture).get() must throwA[Exception](message = "IOs also can fail")
   }
 
-  def toCompletableFutureValue = {
+  def toListenableFutureValue = {
     val someIO = Task.succeed[Int](42)
     unsafeRun(someIO.toListenableFuture).get() must beEqualTo(42)
   }
 
-  def toCompletableFutureE = {
+  def toListenableFutureWith = {
     val failedIO: IO[String, Unit] = IO.fail[String]("IOs also can fail")
     unsafeRun(failedIO.toListenableFutureWith(new Exception(_))).get() must throwA[Exception](
       message = "IOs also can fail"
