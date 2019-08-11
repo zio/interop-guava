@@ -23,19 +23,20 @@ pgpPublicRing := file("/tmp/public.asc")
 pgpSecretRing := file("/tmp/secret.asc")
 releaseEarlyWith := SonatypePublisher
 scmInfo := Some(
-  ScmInfo(url("https://github.com/zio/interop-java/"), "scm:git:git@github.com:zio/interop-java.git")
+  ScmInfo(url("https://github.com/zio/interop-guava/"), "scm:git:git@github.com:zio/interop-guava.git")
 )
 
-lazy val java = project
+lazy val guava = project
   .in(file("."))
   .enablePlugins(BuildInfoPlugin)
-  .settings(stdSettings("zio-interop-java"))
+  .settings(stdSettings("zio-interop-guava"))
   .settings(buildInfoSettings)
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio"    %% "zio"                  % "1.0.0-RC11-1",
-      "dev.zio"    %% "core-tests"           % "1.0.0-RC11-1" % Test classifier "tests",
-      "org.specs2" %% "specs2-core"          % "4.7.0" % Test,
-      "org.specs2" %% "specs2-matcher-extra" % "4.7.0" % Test
+      "dev.zio"          %% "zio"                  % "1.0.0-RC11-1",
+      "com.google.guava" % "guava"                 % "26.0-jre",
+      "dev.zio"          %% "core-tests"           % "1.0.0-RC11-1" % Test classifier "tests",
+      "org.specs2"       %% "specs2-core"          % "4.7.0" % Test,
+      "org.specs2"       %% "specs2-matcher-extra" % "4.7.0" % Test
     )
   )
