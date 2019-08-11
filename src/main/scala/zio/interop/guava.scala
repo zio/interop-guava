@@ -44,9 +44,9 @@ object guava {
 
   def fromListenableFuture[A](make: ExecutionContext => ListenableFuture[A]): Task[A] =
     Task.descriptorWith { d =>
-      val ec = d.executor.asEC
-      val lf = make(ec)
-      Task.effectSuspendTotal {
+      Task.effectSuspend {
+        val ec = d.executor.asEC
+        val lf = make(ec)
         if (lf.isDone) {
           unwrapDone(lf)
         } else {
