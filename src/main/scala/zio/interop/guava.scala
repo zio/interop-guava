@@ -22,37 +22,36 @@ import com.google.common.util.concurrent.{ FutureCallback, Futures, ListenableFu
 import zio._
 
 import scala.concurrent.{ ExecutionContext, ExecutionException }
-import scala.util.control.NonFatal
 
 object guava {
 
-  private def catchFromGet[A]: PartialFunction[Throwable, Task[Nothing]] = {
+  private def catchFromGet(isFatal: Throwable => Boolean): PartialFunction[Throwable, Task[Nothing]] = {
     case e: CompletionException =>
       Task.fail(e.getCause)
     case e: ExecutionException =>
       Task.fail(e.getCause)
     case _: InterruptedException =>
       Task.interrupt
-    case NonFatal(e) =>
+    case e if !isFatal(e) =>
       Task.fail(e)
   }
 
-  private def unwrapDone[A](f: Future[A]): Task[A] =
+  private def unwrapDone[A](isFatal: Throwable => Boolean)(f: Future[A]): Task[A] =
     try {
       Task.succeed(f.get())
-    } catch catchFromGet
+    } catch catchFromGet(isFatal)
 
   def fromListenableFuture[A](make: ExecutionContext => ListenableFuture[A]): Task[A] =
     Task.descriptorWith { d =>
-      Task.effectSuspend {
+      Task.effectSuspendWith { p =>
         val ec = d.executor.asEC
         val lf = make(ec)
         if (lf.isDone) {
-          unwrapDone(lf)
+          unwrapDone(p.fatal)(lf)
         } else {
           Task.effectAsync { cb =>
             val fcb = new FutureCallback[A] {
-              def onFailure(t: Throwable): Unit = cb(catchFromGet.lift(t).getOrElse(Task.die(t)))
+              def onFailure(t: Throwable): Unit = cb(catchFromGet(p.fatal).lift(t).getOrElse(Task.die(t)))
               def onSuccess(result: A): Unit    = cb(Task.succeed(result))
             }
             Futures.addCallback(lf, fcb, ec.execute(_))
@@ -102,7 +101,7 @@ object guava {
           UIO.effectSuspendTotal {
             if (lf.isDone) {
               Task
-                .effectSuspend(unwrapDone(lf))
+                .effectSuspendWith(p => unwrapDone(p.fatal)(lf))
                 .fold(Exit.fail, Exit.succeed)
                 .map(Some(_))
             } else {
