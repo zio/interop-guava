@@ -31,6 +31,7 @@ lazy val guava = project
   .enablePlugins(BuildInfoPlugin)
   .settings(stdSettings("zio-interop-guava"))
   .settings(buildInfoSettings)
+  .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
   .settings(
     libraryDependencies ++= Seq(
       "dev.zio"          %% "zio"          % "1.0.0-RC12-1",
