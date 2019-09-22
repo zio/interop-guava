@@ -78,7 +78,7 @@ jobs:
       - run: echo -n "${PGP_SECRET}" | base64 -d > /tmp/secret.asc
       - run:
           name: Release artifacts
-          command: ./sbt ++2.13.0! +clean +sonatypeBundleClean +publishSigned +sonatypeBundleRelease
+          command: ./sbt ++${SCALA_VERSION}! clean sonatypeBundleClean +publishSigned sonatypeBundleRelease
 
 workflows:
   version: 2
