@@ -36,7 +36,7 @@ lazy val guava = project
   .settings(
     libraryDependencies ++= Seq(
       "dev.zio"          %% "zio"          % "1.0.0-RC12-1",
-      "com.google.guava" % "guava"         % "26.0-jre",
+      "com.google.guava" % "guava"         % "28.1-jre",
       "dev.zio"          %% "zio-test"     % "1.0.0-RC12-1" % Test,
       "dev.zio"          %% "zio-test-sbt" % "1.0.0-RC12-1" % Test
     )
