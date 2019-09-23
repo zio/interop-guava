@@ -35,9 +35,9 @@ lazy val guava = project
   .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio"          %% "zio"          % "1.0.0-RC12-1",
+      "dev.zio"          %% "zio"          % "1.0.0-RC13",
       "com.google.guava" % "guava"         % "26.0-jre",
-      "dev.zio"          %% "zio-test"     % "1.0.0-RC12-1" % Test,
-      "dev.zio"          %% "zio-test-sbt" % "1.0.0-RC12-1" % Test
+      "dev.zio"          %% "zio-test"     % "1.0.0-RC13" % Test,
+      "dev.zio"          %% "zio-test-sbt" % "1.0.0-RC13" % Test
     )
   )
