@@ -18,7 +18,7 @@ object GuavaSpec {
             evaluated = true
             Futures.immediateFuture(())
           }, Executors.newCachedThreadPool())
-        assertM(Task.fromListenableFuture(UIO.effectTotal(ftr)).as(evaluated).run, succeeds(isFalse))
+        assertM(Task.fromListenableFuture(UIO.effectTotal(ftr)).when(false).as(evaluated), isFalse)
       },
       testM("catch exceptions thrown by lazy block") {
         val ex                                    = new Exception("no future for you!")
