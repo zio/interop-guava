@@ -24,7 +24,6 @@ import zio._
 import scala.concurrent.{ ExecutionContext, ExecutionException }
 
 object guava {
-
   private def catchFromGet(isFatal: Throwable => Boolean): PartialFunction[Throwable, Task[Nothing]] = {
     case e: CompletionException =>
       Task.fail(e.getCause)
@@ -68,33 +67,26 @@ object guava {
   }
 
   implicit class TaskObjListenableFutureOps(private val taskObj: Task.type) extends AnyVal {
-
     def fromListenableFuture[A](make: ExecutionContext => ListenableFuture[A]): Task[A] =
       guava.fromListenableFuture(make)
 
     def fromListenableFuture[A](lfUio: UIO[ListenableFuture[A]]): Task[A] =
       guava.fromListenableFuture(lfUio)
-
   }
 
   implicit class ZioObjListenableFutureOps(private val zioObj: ZIO.type) extends AnyVal {
-
     def fromListenableFuture[A](make: ExecutionContext => ListenableFuture[A]): Task[A] =
       guava.fromListenableFuture(make)
 
     def fromListenableFuture[A](lfUio: UIO[ListenableFuture[A]]): Task[A] =
       guava.fromListenableFuture(lfUio)
-
   }
 
   implicit class FiberObjOps(private val fiberObj: Fiber.type) extends AnyVal {
-
     def fromListenableFuture[A](thunk: => ListenableFuture[A]): Fiber[Throwable, A] = {
-
       lazy val lf = thunk
 
       new Fiber[Throwable, A] {
-
         override def await: UIO[Exit[Throwable, A]] = Task.fromListenableFuture(UIO.effectTotal(lf)).run
 
         override def poll: UIO[Option[Exit[Throwable, A]]] =
@@ -114,7 +106,6 @@ object guava {
         override def inheritFiberRefs: UIO[Unit] = UIO.unit
       }
     }
-
   }
 
   implicit class TaskListenableFutureOps[A](private val io: Task[A]) extends AnyVal {
@@ -126,5 +117,4 @@ object guava {
     def toListenableFutureWith(f: E => Throwable): UIO[ListenableFuture[A]] =
       io.mapError(f).toListenableFuture
   }
-
 }
