@@ -111,7 +111,7 @@ object guava {
 
         final def inheritRefs: UIO[Unit] = UIO.unit
 
-        final def status: UIO[Fiber.Status] = 
+        final def status: UIO[Fiber.Status] =
           UIO(if (thunk.isDone) Fiber.Status.Done else Fiber.Status.Running)
 
         final def trace: UIO[Option[ZTrace]] = UIO.none
