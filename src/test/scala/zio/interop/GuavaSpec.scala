@@ -45,7 +45,7 @@ object GuavaSpec {
       },
       testM("handle null produced by the completed `Future`") {
         val someValue: UIO[ListenableFuture[String]] = UIO.effectTotal(Futures.immediateFuture[String](null))
-        assertM(Task.fromListenableFuture[String](someValue).run.map(Option(_)), isNone)
+        assertM(Task.fromListenableFuture[String](someValue).map(Option(_)), isNone)
       }
     ),
     suite("`Task.toListenableFuture` must")(
