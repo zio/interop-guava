@@ -101,9 +101,20 @@ object guava {
             }
           }
 
-        override def interrupt: UIO[Exit[Throwable, A]] = join.fold(Exit.fail, Exit.succeed)
+        final def children: UIO[Iterable[Fiber[Any, Any]]] = UIO(Nil)
 
-        override def inheritFiberRefs: UIO[Unit] = UIO.unit
+        final def getRef[A](ref: FiberRef[A]): UIO[A] = UIO(ref.initial)
+
+        final def id: UIO[Option[Fiber.Id]] = UIO.none
+
+        final def interruptAs(id: Fiber.Id): UIO[Exit[Throwable, A]] = join.fold(Exit.fail, Exit.succeed)
+
+        final def inheritRefs: UIO[Unit] = UIO.unit
+
+        final def status: UIO[Fiber.Status] = 
+          UIO(if (thunk.isDone) Fiber.Status.Done else Fiber.Status.Running)
+
+        final def trace: UIO[Option[ZTrace]] = UIO.none
       }
     }
   }

@@ -23,7 +23,7 @@ object GuavaSpec {
       testM("catch exceptions thrown by lazy block") {
         val ex                                    = new Exception("no future for you!")
         val noFuture: UIO[ListenableFuture[Unit]] = UIO.effectTotal(throw ex)
-        assertM(Task.fromListenableFuture(noFuture).run, equalTo[Exit[Throwable, Unit]](Exit.die(ex)))
+        assertM(Task.fromListenableFuture(noFuture).run, dies(equalTo(ex)))
       },
       testM("return an `IO` that fails if `Future` fails 1") {
         val ex                                   = new Exception("no value for you!")
@@ -45,7 +45,7 @@ object GuavaSpec {
       },
       testM("handle null produced by the completed `Future`") {
         val someValue: UIO[ListenableFuture[String]] = UIO.effectTotal(Futures.immediateFuture[String](null))
-        assertM(Task.fromListenableFuture[String](someValue).run, succeeds(equalTo[String](null)))
+        assertM(Task.fromListenableFuture[String](someValue).run.map(Option(_)), isNone)
       }
     ),
     suite("`Task.toListenableFuture` must")(
@@ -97,7 +97,7 @@ object GuavaSpec {
       testM("catch exceptions thrown by lazy block") {
         val ex                               = new Exception("no future for you!")
         def noFuture: ListenableFuture[Unit] = throw ex
-        assertM(Fiber.fromListenableFuture(noFuture).join.run, equalTo[Exit[Throwable, Unit]](Exit.die(ex)))
+        assertM(Fiber.fromListenableFuture(noFuture).join.run, dies(equalTo(ex)))
       },
       testM("return an `IO` that fails if `Future` fails 1") {
         val ex                              = new Exception("no value for you!")
