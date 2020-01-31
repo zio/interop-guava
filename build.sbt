@@ -22,8 +22,6 @@ inThisBuild(
   )
 )
 
-ThisBuild / publishTo := sonatypePublishToBundle.value
-
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
 
@@ -35,9 +33,9 @@ lazy val guava = project
   .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio"          %% "zio"          % "1.0.0-RC14",
+      "dev.zio"          %% "zio"          % "1.0.0-RC17",
       "com.google.guava" % "guava"         % "28.2-jre",
-      "dev.zio"          %% "zio-test"     % "1.0.0-RC14" % Test,
-      "dev.zio"          %% "zio-test-sbt" % "1.0.0-RC14" % Test
+      "dev.zio"          %% "zio-test"     % "1.0.0-RC17" % Test,
+      "dev.zio"          %% "zio-test-sbt" % "1.0.0-RC17" % Test
     )
   )
