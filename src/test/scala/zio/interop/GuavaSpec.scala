@@ -32,15 +32,13 @@ object GuavaSpec {
       },
       testM("return an `IO` that fails if `Future` fails 2") {
         val ex = new Exception("no value for you!")
-        val noValue: UIO[ListenableFuture[Unit]] = UIO.effectTotal(Futures.submitAsync({ () =>
-          Futures.immediateFailedFuture(ex)
-        }, Executors.newCachedThreadPool()))
+        val noValue: UIO[ListenableFuture[Unit]] =
+          UIO.effectTotal(Futures.submitAsync(() => Futures.immediateFailedFuture(ex), Executors.newCachedThreadPool()))
         assertM(Task.fromListenableFuture(noValue).run, fails[Throwable](equalTo(ex)))
       },
       testM("return an `IO` that produces the value from `Future`") {
-        val someValue: UIO[ListenableFuture[Int]] = UIO.effectTotal(Futures.submitAsync({ () =>
-          Futures.immediateFuture(42)
-        }, Executors.newCachedThreadPool()))
+        val someValue: UIO[ListenableFuture[Int]] =
+          UIO.effectTotal(Futures.submitAsync(() => Futures.immediateFuture(42), Executors.newCachedThreadPool()))
         assertM(Task.fromListenableFuture(someValue).run, succeeds(equalTo(42)))
       },
       testM("handle null produced by the completed `Future`") {
@@ -107,9 +105,7 @@ object GuavaSpec {
       testM("return an `IO` that fails if `Future` fails 2") {
         val ex = new Exception("no value for you!")
         def noValue: ListenableFuture[Unit] =
-          Futures.submitAsync({ () =>
-            Futures.immediateFailedFuture(ex)
-          }, Executors.newCachedThreadPool())
+          Futures.submitAsync(() => Futures.immediateFailedFuture(ex), Executors.newCachedThreadPool())
         assertM(Fiber.fromListenableFuture(noValue).join.run, fails[Throwable](equalTo(ex)))
       },
       testM("return an `IO` that produces the value from `Future`") {
