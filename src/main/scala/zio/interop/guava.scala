@@ -37,12 +37,12 @@ object guava {
 
   private def unwrapDone[A](isFatal: Throwable => Boolean)(f: Future[A]): Task[A] =
     try {
-      Task.succeed(f.get())
+      Task.succeedNow(f.get())
     } catch catchFromGet(isFatal)
 
   def fromListenableFuture[A](make: ExecutionContext => ListenableFuture[A]): Task[A] =
     Task.descriptorWith { d =>
-      Task.effectSuspendWith { p =>
+      Task.effectSuspendWith { (p, _) =>
         val ec = d.executor.asEC
         val lf = make(ec)
         if (lf.isDone) {
@@ -51,7 +51,7 @@ object guava {
           Task.effectAsync { cb =>
             val fcb = new FutureCallback[A] {
               def onFailure(t: Throwable): Unit = cb(catchFromGet(p.fatal).lift(t).getOrElse(Task.die(t)))
-              def onSuccess(result: A): Unit    = cb(Task.succeed(result))
+              def onSuccess(result: A): Unit    = cb(Task.succeedNow(result))
             }
             Futures.addCallback(lf, fcb, ec.execute(_))
           }
@@ -86,18 +86,18 @@ object guava {
     def fromListenableFuture[A](thunk: => ListenableFuture[A]): Fiber[Throwable, A] = {
       lazy val lf = thunk
 
-      new Fiber[Throwable, A] {
+      new Fiber.Synthetic.Internal[Throwable, A] {
         override def await: UIO[Exit[Throwable, A]] = Task.fromListenableFuture(UIO.effectTotal(lf)).run
 
         override def poll: UIO[Option[Exit[Throwable, A]]] =
           UIO.effectSuspendTotal {
             if (lf.isDone) {
               Task
-                .effectSuspendWith(p => unwrapDone(p.fatal)(lf))
+                .effectSuspendWith((p, _) => unwrapDone(p.fatal)(lf))
                 .fold(Exit.fail, Exit.succeed)
                 .map(Some(_))
             } else {
-              UIO.succeed(None)
+              UIO.succeedNow(None)
             }
           }
 
@@ -105,16 +105,10 @@ object guava {
 
         final def getRef[A](ref: FiberRef[A]): UIO[A] = UIO(ref.initial)
 
-        final def id: UIO[Option[Fiber.Id]] = UIO.none
-
         final def interruptAs(id: Fiber.Id): UIO[Exit[Throwable, A]] = join.fold(Exit.fail, Exit.succeed)
 
         final def inheritRefs: UIO[Unit] = UIO.unit
 
-        final def status: UIO[Fiber.Status] =
-          UIO(if (thunk.isDone) Fiber.Status.Done else Fiber.Status.Running)
-
-        final def trace: UIO[Option[ZTrace]] = UIO.none
       }
     }
   }
