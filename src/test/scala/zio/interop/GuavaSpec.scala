@@ -22,8 +22,8 @@ object GuavaSpec extends DefaultRunnableSpec {
       },
       testM("catch exceptions thrown by lazy block") {
         val ex                                    = new Exception("no future for you!")
-        val noFuture: UIO[ListenableFuture[Unit]] = UIO.effectTotal(throw ex)
-        assertM(Task.fromListenableFuture(noFuture).run)(dies(equalTo(ex)))
+        lazy val noFuture: ListenableFuture[Unit] = throw ex
+        assertM(Task.fromListenableFuture(noFuture).run)(fails(equalTo(ex)))
       },
       testM("return an `IO` that fails if `Future` fails 1") {
         val ex                                   = new Exception("no value for you!")
@@ -44,6 +44,16 @@ object GuavaSpec extends DefaultRunnableSpec {
       testM("handle null produced by the completed `Future`") {
         val someValue: UIO[ListenableFuture[String]] = UIO.effectTotal(Futures.immediateFuture[String](null))
         assertM(Task.fromListenableFuture[String](someValue).map(Option(_)))(isNone)
+      },
+      testM("be referentially transparent") {
+        var n    = 0
+        val task = ZIO.fromListenableFuture(
+          Futures.submitAsync(() => Futures.immediateFuture(n += 1), Executors.newCachedThreadPool())
+        )
+        for {
+          _ <- task
+          _ <- task
+        } yield assert(n)(equalTo(2))
       }
     ),
     suite("`Task.toListenableFuture` must")(
@@ -93,7 +103,7 @@ object GuavaSpec extends DefaultRunnableSpec {
       testM("catch exceptions thrown by lazy block") {
         val ex                               = new Exception("no future for you!")
         def noFuture: ListenableFuture[Unit] = throw ex
-        assertM(Fiber.fromListenableFuture(noFuture).join.run)(dies(equalTo(ex)))
+        assertM(Fiber.fromListenableFuture(noFuture).join.run)(fails(equalTo(ex)))
       },
       testM("return an `IO` that fails if `Future` fails 1") {
         val ex                              = new Exception("no value for you!")
