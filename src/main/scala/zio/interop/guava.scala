@@ -25,29 +25,28 @@ import scala.concurrent.{ ExecutionContext, ExecutionException }
 
 object guava {
   private def catchFromGet(isFatal: Throwable => Boolean): PartialFunction[Throwable, Task[Nothing]] = {
-    case e: CompletionException =>
+    case e: CompletionException  =>
       Task.fail(e.getCause)
-    case e: ExecutionException =>
+    case e: ExecutionException   =>
       Task.fail(e.getCause)
     case _: InterruptedException =>
       Task.interrupt
-    case e if !isFatal(e) =>
+    case e if !isFatal(e)        =>
       Task.fail(e)
   }
 
   private def unwrapDone[A](isFatal: Throwable => Boolean)(f: Future[A]): Task[A] =
-    try {
-      Task.succeedNow(f.get())
-    } catch catchFromGet(isFatal)
+    try Task.succeedNow(f.get())
+    catch catchFromGet(isFatal)
 
   def fromListenableFuture[A](make: ExecutionContext => ListenableFuture[A]): Task[A] =
     Task.descriptorWith { d =>
       Task.effectSuspendWith { (p, _) =>
         val ec = d.executor.asEC
         val lf = make(ec)
-        if (lf.isDone) {
+        if (lf.isDone)
           unwrapDone(p.fatal)(lf)
-        } else {
+        else
           Task.effectAsync { cb =>
             val fcb = new FutureCallback[A] {
               def onFailure(t: Throwable): Unit = cb(catchFromGet(p.fatal).lift(t).getOrElse(Task.die(t)))
@@ -55,7 +54,6 @@ object guava {
             }
             Futures.addCallback(lf, fcb, ec.execute(_))
           }
-        }
       }
     }
 
@@ -91,14 +89,13 @@ object guava {
 
         override def poll: UIO[Option[Exit[Throwable, A]]] =
           UIO.effectSuspendTotal {
-            if (lf.isDone) {
+            if (lf.isDone)
               Task
                 .effectSuspendWith((p, _) => unwrapDone(p.fatal)(lf))
                 .fold(Exit.fail, Exit.succeed)
                 .map(Some(_))
-            } else {
+            else
               UIO.succeedNow(None)
-            }
           }
 
         final def children: UIO[Iterable[Fiber[Any, Any]]] = UIO(Nil)

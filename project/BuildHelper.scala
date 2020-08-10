@@ -8,7 +8,7 @@ import BuildInfoKeys._
 object BuildHelper {
   private val SilencerVersion = "1.4.4"
 
-  val testDeps        = Seq("org.scalacheck"  %% "scalacheck"  % "1.14.3"        % "test")
+  val testDeps        = Seq("org.scalacheck" %% "scalacheck" % "1.14.3" % "test")
   val compileOnlyDeps = Seq("com.github.ghik" % "silencer-lib" % SilencerVersion % Provided cross CrossVersion.full)
 
   private val stdOptions = Seq(
@@ -69,7 +69,7 @@ object BuildHelper {
           "-Ywarn-unused-import",
           "-Xfuture"
         ) ++ std2xOptions
-      case _ => Seq.empty
+      case _             => Seq.empty
     }
 
   def stdSettings(prjName: String) = Seq(

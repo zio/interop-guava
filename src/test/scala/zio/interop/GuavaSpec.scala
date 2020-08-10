@@ -12,7 +12,7 @@ object GuavaSpec extends DefaultRunnableSpec {
   def spec: Spec[Any, TestFailure[Throwable], TestSuccess] = suite("GuavaSpec")(
     suite("`Task.fromListenableFuture` must")(
       testM("be lazy on the `Future` parameter") {
-        var evaluated = false
+        var evaluated                   = false
         def ftr: ListenableFuture[Unit] =
           Futures.submitAsync({ () =>
             evaluated = true
@@ -31,7 +31,7 @@ object GuavaSpec extends DefaultRunnableSpec {
         assertM(Task.fromListenableFuture(noValue).run)(fails[Throwable](equalTo(ex)))
       },
       testM("return an `IO` that fails if `Future` fails 2") {
-        val ex = new Exception("no value for you!")
+        val ex                                   = new Exception("no value for you!")
         val noValue: UIO[ListenableFuture[Unit]] =
           UIO.effectTotal(Futures.submitAsync(() => Futures.immediateFailedFuture(ex), Executors.newCachedThreadPool()))
         assertM(Task.fromListenableFuture(noValue).run)(fails[Throwable](equalTo(ex)))
@@ -81,7 +81,7 @@ object GuavaSpec extends DefaultRunnableSpec {
     ),
     suite("`Fiber.fromListenableFuture` must")(
       test("be lazy on the `Future` parameter") {
-        var evaluated = false
+        var evaluated                   = false
         def ftr: ListenableFuture[Unit] =
           Futures.submitAsync({ () =>
             evaluated = true
@@ -101,7 +101,7 @@ object GuavaSpec extends DefaultRunnableSpec {
         assertM(Fiber.fromListenableFuture(noValue).join.run)(fails[Throwable](equalTo(ex)))
       },
       testM("return an `IO` that fails if `Future` fails 2") {
-        val ex = new Exception("no value for you!")
+        val ex                              = new Exception("no value for you!")
         def noValue: ListenableFuture[Unit] =
           Futures.submitAsync(() => Futures.immediateFailedFuture(ex), Executors.newCachedThreadPool())
         assertM(Fiber.fromListenableFuture(noValue).join.run)(fails[Throwable](equalTo(ex)))
