@@ -1,6 +1,7 @@
 package zio
 package interop
 
+import java.util.{ concurrent => juc }
 import java.util.concurrent.Executors
 
 import com.google.common.util.concurrent.{ Futures, ListenableFuture }
@@ -20,9 +21,9 @@ object GuavaSpec extends DefaultRunnableSpec {
           }, Executors.newCachedThreadPool())
         assertM(Task.fromListenableFuture(UIO.effectTotal(ftr)).when(false).as(evaluated))(isFalse)
       },
-      testM("catch exceptions thrown by lazy block") {
-        val ex                                    = new Exception("no future for you!")
-        lazy val noFuture: ListenableFuture[Unit] = throw ex
+      testM("catch exceptions thrown by make block") {
+        val ex                                                    = new Exception("no future for you!")
+        lazy val noFuture: juc.Executor => ListenableFuture[Unit] = _ => throw ex
         assertM(Task.fromListenableFuture(noFuture).run)(fails(equalTo(ex)))
       },
       testM("return an `IO` that fails if `Future` fails 1") {
@@ -48,7 +49,7 @@ object GuavaSpec extends DefaultRunnableSpec {
       testM("be referentially transparent") {
         var n    = 0
         val task = ZIO.fromListenableFuture(
-          Futures.submitAsync(() => Futures.immediateFuture(n += 1), Executors.newCachedThreadPool())
+          UIO.effectTotal(Futures.submitAsync(() => Futures.immediateFuture(n += 1), Executors.newCachedThreadPool()))
         )
         for {
           _ <- task
