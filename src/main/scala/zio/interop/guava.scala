@@ -16,14 +16,16 @@
 
 package zio.interop
 
-import java.util.concurrent.{ CompletionException, Future }
+import java.util.concurrent.CompletionException
+import java.util.{ concurrent => juc }
 
 import com.google.common.util.concurrent.{ FutureCallback, Futures, ListenableFuture }
 import zio._
 
-import scala.concurrent.{ ExecutionContext, ExecutionException }
+import scala.concurrent.ExecutionException
 
 object guava {
+
   private def catchFromGet(isFatal: Throwable => Boolean): PartialFunction[Throwable, Task[Nothing]] = {
     case e: CompletionException  =>
       Task.fail(e.getCause)
@@ -35,24 +37,24 @@ object guava {
       Task.fail(e)
   }
 
-  private def unwrapDone[A](isFatal: Throwable => Boolean)(f: Future[A]): Task[A] =
+  private def unwrapDone[A](isFatal: Throwable => Boolean)(f: ListenableFuture[A]): Task[A] =
     try Task.succeedNow(f.get())
     catch catchFromGet(isFatal)
 
-  def fromListenableFuture[A](make: ExecutionContext => ListenableFuture[A]): Task[A] =
-    Task.descriptorWith { d =>
-      Task.effectSuspendWith { (p, _) =>
-        val ec = d.executor.asEC
-        val lf = make(ec)
+  def fromListenableFuture[A](make: juc.Executor => ListenableFuture[A]): Task[A] =
+    Task.effectSuspendTotalWith { (p, _) =>
+      val ex: juc.Executor = p.executor.asEC.execute(_)
+      Task.effect(make(ex)).flatMap { lf =>
         if (lf.isDone)
           unwrapDone(p.fatal)(lf)
         else
           Task.effectAsync { cb =>
             val fcb = new FutureCallback[A] {
               def onFailure(t: Throwable): Unit = cb(catchFromGet(p.fatal).lift(t).getOrElse(Task.die(t)))
-              def onSuccess(result: A): Unit    = cb(Task.succeedNow(result))
+
+              def onSuccess(result: A): Unit = cb(Task.succeedNow(result))
             }
-            Futures.addCallback(lf, fcb, ec.execute(_))
+            Futures.addCallback(lf, fcb, ex)
           }
       }
     }
@@ -65,7 +67,7 @@ object guava {
   }
 
   implicit class TaskObjListenableFutureOps(private val taskObj: Task.type) extends AnyVal {
-    def fromListenableFuture[A](make: ExecutionContext => ListenableFuture[A]): Task[A] =
+    def fromListenableFuture[A](make: juc.Executor => ListenableFuture[A]): Task[A] =
       guava.fromListenableFuture(make)
 
     def fromListenableFuture[A](lfUio: UIO[ListenableFuture[A]]): Task[A] =
@@ -73,7 +75,7 @@ object guava {
   }
 
   implicit class ZioObjListenableFutureOps(private val zioObj: ZIO.type) extends AnyVal {
-    def fromListenableFuture[A](make: ExecutionContext => ListenableFuture[A]): Task[A] =
+    def fromListenableFuture[A](make: juc.Executor => ListenableFuture[A]): Task[A] =
       guava.fromListenableFuture(make)
 
     def fromListenableFuture[A](lfUio: UIO[ListenableFuture[A]]): Task[A] =
@@ -82,10 +84,10 @@ object guava {
 
   implicit class FiberObjOps(private val fiberObj: Fiber.type) extends AnyVal {
     def fromListenableFuture[A](thunk: => ListenableFuture[A]): Fiber[Throwable, A] = {
-      lazy val lf = thunk
+      lazy val lf: ListenableFuture[A] = thunk
 
       new Fiber.Synthetic.Internal[Throwable, A] {
-        override def await: UIO[Exit[Throwable, A]] = Task.fromListenableFuture(UIO.effectTotal(lf)).run
+        override def await: UIO[Exit[Throwable, A]] = Task.fromListenableFuture(_ => lf).run
 
         override def poll: UIO[Option[Exit[Throwable, A]]] =
           UIO.effectSuspendTotal {

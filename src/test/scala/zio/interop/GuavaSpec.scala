@@ -1,6 +1,7 @@
 package zio
 package interop
 
+import java.util.{ concurrent => juc }
 import java.util.concurrent.Executors
 
 import com.google.common.util.concurrent.{ Futures, ListenableFuture }
@@ -20,10 +21,10 @@ object GuavaSpec extends DefaultRunnableSpec {
           }, Executors.newCachedThreadPool())
         assertM(Task.fromListenableFuture(UIO.effectTotal(ftr)).when(false).as(evaluated))(isFalse)
       },
-      testM("catch exceptions thrown by lazy block") {
-        val ex                                    = new Exception("no future for you!")
-        val noFuture: UIO[ListenableFuture[Unit]] = UIO.effectTotal(throw ex)
-        assertM(Task.fromListenableFuture(noFuture).run)(dies(equalTo(ex)))
+      testM("catch exceptions thrown by make block") {
+        val ex                                                    = new Exception("no future for you!")
+        lazy val noFuture: juc.Executor => ListenableFuture[Unit] = _ => throw ex
+        assertM(Task.fromListenableFuture(noFuture).run)(fails(equalTo(ex)))
       },
       testM("return an `IO` that fails if `Future` fails 1") {
         val ex                                   = new Exception("no value for you!")
@@ -44,6 +45,16 @@ object GuavaSpec extends DefaultRunnableSpec {
       testM("handle null produced by the completed `Future`") {
         val someValue: UIO[ListenableFuture[String]] = UIO.effectTotal(Futures.immediateFuture[String](null))
         assertM(Task.fromListenableFuture[String](someValue).map(Option(_)))(isNone)
+      },
+      testM("be referentially transparent") {
+        var n    = 0
+        val task = ZIO.fromListenableFuture(
+          UIO.effectTotal(Futures.submitAsync(() => Futures.immediateFuture(n += 1), Executors.newCachedThreadPool()))
+        )
+        for {
+          _ <- task
+          _ <- task
+        } yield assert(n)(equalTo(2))
       }
     ),
     suite("`Task.toListenableFuture` must")(
@@ -93,7 +104,7 @@ object GuavaSpec extends DefaultRunnableSpec {
       testM("catch exceptions thrown by lazy block") {
         val ex                               = new Exception("no future for you!")
         def noFuture: ListenableFuture[Unit] = throw ex
-        assertM(Fiber.fromListenableFuture(noFuture).join.run)(dies(equalTo(ex)))
+        assertM(Fiber.fromListenableFuture(noFuture).join.run)(fails(equalTo(ex)))
       },
       testM("return an `IO` that fails if `Future` fails 1") {
         val ex                              = new Exception("no value for you!")
