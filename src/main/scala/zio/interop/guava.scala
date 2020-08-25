@@ -100,8 +100,6 @@ object guava {
               UIO.succeedNow(None)
           }
 
-        final def children: UIO[Iterable[Fiber[Any, Any]]] = UIO(Nil)
-
         final def getRef[A](ref: FiberRef[A]): UIO[A] = UIO(ref.initial)
 
         final def interruptAs(id: Fiber.Id): UIO[Exit[Throwable, A]] = join.fold(Exit.fail, Exit.succeed)
