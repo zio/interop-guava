@@ -79,7 +79,7 @@ object BuildHelper {
     scalaVersion in ThisBuild := crossScalaVersions.value.head,
     scalacOptions := stdOptions ++ extraOptions(scalaVersion.value),
     libraryDependencies ++= compileOnlyDeps ++ testDeps ++ Seq(
-      compilerPlugin("org.typelevel"   %% "kind-projector" % "0.10.3"),
+      compilerPlugin("org.typelevel"  %% "kind-projector"  % "0.10.3"),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % SilencerVersion cross CrossVersion.full)
     ),
     parallelExecution in Test := true,
