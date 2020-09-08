@@ -15,10 +15,13 @@ object GuavaSpec extends DefaultRunnableSpec {
       testM("be lazy on the `Future` parameter") {
         var evaluated                   = false
         def ftr: ListenableFuture[Unit] =
-          Futures.submitAsync({ () =>
-            evaluated = true
-            Futures.immediateFuture(())
-          }, Executors.newCachedThreadPool())
+          Futures.submitAsync(
+            { () =>
+              evaluated = true
+              Futures.immediateFuture(())
+            },
+            Executors.newCachedThreadPool()
+          )
         assertM(Task.fromListenableFuture(UIO.effectTotal(ftr)).when(false).as(evaluated))(isFalse)
       },
       testM("catch exceptions thrown by make block") {
@@ -94,10 +97,13 @@ object GuavaSpec extends DefaultRunnableSpec {
       test("be lazy on the `Future` parameter") {
         var evaluated                   = false
         def ftr: ListenableFuture[Unit] =
-          Futures.submitAsync({ () =>
-            evaluated = true
-            Futures.immediateFuture(())
-          }, Executors.newCachedThreadPool())
+          Futures.submitAsync(
+            { () =>
+              evaluated = true
+              Futures.immediateFuture(())
+            },
+            Executors.newCachedThreadPool()
+          )
         Fiber.fromListenableFuture(ftr)
         assert(evaluated)(isFalse)
       },
