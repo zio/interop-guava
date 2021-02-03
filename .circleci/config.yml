@@ -167,12 +167,12 @@ jobs:
       - <<: *scala_213
       - <<: *jdk_8
 
-  test_212_jdk11_jvm:
+  test_213_jdk11_jvm:
     <<: *testJVM
     <<: *machine_ubuntu
     <<: *machine_resource
     environment:
-      - <<: *scala_212
+      - <<: *scala_213
       - <<: *jdk_11
 
   release:
