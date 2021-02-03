@@ -6,9 +6,8 @@ import sbtbuildinfo._
 import BuildInfoKeys._
 
 object BuildHelper {
-  private val SilencerVersion = "1.4.4"
+  private val SilencerVersion = "1.7.2"
 
-  val testDeps        = Seq("org.scalacheck" %% "scalacheck" % "1.15.2" % "test")
   val compileOnlyDeps = Seq("com.github.ghik" % "silencer-lib" % SilencerVersion % Provided cross CrossVersion.full)
 
   private val stdOptions = Seq(
@@ -31,10 +30,9 @@ object BuildHelper {
     "-Ywarn-value-discard"
   )
 
-  val buildInfoSettings = Seq(
-    buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion, isSnapshot),
-    buildInfoPackage := "zio",
-    buildInfoObject := "BuildInfo"
+  def buildInfoSettings(packageName: String) = Seq(
+    buildInfoKeys := Seq[BuildInfoKey](organization, moduleName, name, version, scalaVersion, sbtVersion, isSnapshot),
+    buildInfoPackage := packageName
   )
 
   def extraOptions(scalaVersion: String) =
@@ -75,11 +73,11 @@ object BuildHelper {
   def stdSettings(prjName: String) = Seq(
     name := s"$prjName",
     scalacOptions := stdOptions,
-    crossScalaVersions := Seq("2.13.0", "2.12.8", "2.11.12"),
+    crossScalaVersions := Seq("2.13.4", "2.12.13", "2.11.12"),
     scalaVersion in ThisBuild := crossScalaVersions.value.head,
     scalacOptions := stdOptions ++ extraOptions(scalaVersion.value),
-    libraryDependencies ++= compileOnlyDeps ++ testDeps ++ Seq(
-      compilerPlugin("org.typelevel"  %% "kind-projector"  % "0.10.3"),
+    libraryDependencies ++= compileOnlyDeps ++ Seq(
+      compilerPlugin("org.typelevel"  %% "kind-projector"  % "0.11.3" cross CrossVersion.full),
       compilerPlugin("com.github.ghik" % "silencer-plugin" % SilencerVersion cross CrossVersion.full)
     ),
     parallelExecution in Test := true,

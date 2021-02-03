@@ -25,17 +25,20 @@ inThisBuild(
 addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
 addCommandAlias("check", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
 
+val zioVersion = "1.0.4-2"
+
 lazy val guava = project
   .in(file("."))
   .enablePlugins(BuildInfoPlugin)
   .settings(stdSettings("zio-interop-guava"))
-  .settings(buildInfoSettings)
+  .settings(buildInfoSettings("zio.interop.guava"))
   .settings(testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"))
   .settings(
     libraryDependencies ++= Seq(
-      "dev.zio"         %% "zio"          % "1.0.4",
+      "dev.zio"         %% "zio"          % zioVersion,
       "com.google.guava" % "guava"        % "30.1-jre",
-      "dev.zio"         %% "zio-test"     % "1.0.4" % Test,
-      "dev.zio"         %% "zio-test-sbt" % "1.0.4" % Test
+      "dev.zio"         %% "zio-test"     % zioVersion % Test,
+      "dev.zio"         %% "zio-test-sbt" % zioVersion % Test
     )
   )
+  .enablePlugins(BuildInfoPlugin)

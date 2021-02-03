@@ -4,10 +4,10 @@ scala_211: &scala_211
   SCALA_VERSION: 2.11.12
 
 scala_212: &scala_212
-  SCALA_VERSION: 2.12.9
+  SCALA_VERSION: 2.12.13
 
 scala_213: &scala_213
-  SCALA_VERSION: 2.13.0
+  SCALA_VERSION: 2.13.4
 
 jdk_8: &jdk_8
   JDK_VERSION: 8
@@ -28,24 +28,23 @@ install_jdk: &install_jdk
       command: |
         while $(ps aux | grep -i ' apt ' | grep -v grep > /dev/null); do sleep 1; done # Wait for apt to be ready
 
+        # jfrog repositories with AdoptOpenJDK haven't been reliable, use Java from Ubuntu instead
         sudo rm /etc/apt/sources.list.d/*
         sudo tee /etc/apt/sources.list > /dev/null \<< 'EOF'
-        deb http://mirror.math.princeton.edu/pub/ubuntu/ xenial main universe
-        deb http://mirror.math.princeton.edu/pub/ubuntu/ xenial-updates main universe
-        deb http://mirror.math.princeton.edu/pub/ubuntu/ xenial-backports main universe
-        deb http://mirror.math.princeton.edu/pub/ubuntu/ xenial-security main restricted universe
+        deb http://mirror.math.princeton.edu/pub/ubuntu/ groovy main universe
+        deb http://mirror.math.princeton.edu/pub/ubuntu/ groovy-updates main universe
+        deb http://mirror.math.princeton.edu/pub/ubuntu/ groovy-backports main universe
+        deb http://mirror.math.princeton.edu/pub/ubuntu/ groovy-security main restricted universe
         EOF
 
-        if [ $JDK_VERSION == 11 ]; then
-          wget -qO - https://adoptopenjdk.jfrog.io/adoptopenjdk/api/gpg/key/public | sudo apt-key add -
-          sudo add-apt-repository https://adoptopenjdk.jfrog.io/adoptopenjdk/deb/ -y
-        fi
+        sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 871920D1991BC93C
         sudo apt update
-        if [ $JDK_VERSION == 11 ]; then
-          sudo apt install -y adoptopenjdk-11-hotspot
-        elif [ $JDK_VERSION == 8 ]; then
-          sudo apt install -y openjdk-8-jdk
-        fi
+        export DEBIAN_FRONTEND=noninteractive
+        sudo apt-get install \
+          -o "Dpkg::Options::=--force-confold" -o "Dpkg::Options::=--force-confdef" -o "APT::Immediate-Configure=false" --allow-downgrades --allow-remove-essential --allow-change-held-packages --no-install-recommends \
+          openjdk-${JDK_VERSION}-jre-headless
+        sudo update-alternatives --install /usr/bin/java java /usr/lib/jvm/java-${JDK_VERSION}-openjdk-amd64/bin/java 9999
+        sudo update-alternatives --set java /usr/lib/jvm/java-${JDK_VERSION}-openjdk-amd64/bin/java
         java -version
 
 load_cache: &load_cache
@@ -215,8 +214,8 @@ workflows:
           requires:
             - test_211_jdk8_jvm
             - test_212_jdk8_jvm
-            - test_212_jdk11_jvm
             - test_213_jdk8_jvm
+            - test_213_jdk11_jvm
           filters:
             <<: *filter_tags
             branches:

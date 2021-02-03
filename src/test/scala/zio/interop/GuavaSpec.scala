@@ -6,8 +6,8 @@ import java.util.concurrent.Executors
 
 import com.google.common.util.concurrent.{ Futures, ListenableFuture }
 import zio.interop.guava._
-import zio.test.Assertion.{ isFalse, succeeds, _ }
-import zio.test.{ DefaultRunnableSpec, assertM, suite, testM, _ }
+import zio.test.Assertion._
+import zio.test._
 
 object GuavaSpec extends DefaultRunnableSpec {
   def spec: Spec[Any, TestFailure[Throwable], TestSuccess] = suite("GuavaSpec")(
