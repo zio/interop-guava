@@ -16,15 +16,14 @@
 
 package zio.interop
 
-import java.util.concurrent.CompletionException
-import java.util.{ concurrent => juc }
-
-import com.google.common.util.concurrent.{ FutureCallback, Futures, ListenableFuture }
+import com.google.common.util.concurrent.{FutureCallback, Futures, ListenableFuture}
 import zio._
 
+import java.util.concurrent.CompletionException
+import java.util.{concurrent => juc}
 import scala.concurrent.ExecutionException
 
-object guava {
+package object guava {
 
   private def catchFromGet(isFatal: Throwable => Boolean): PartialFunction[Throwable, Task[Nothing]] = {
     case e: CompletionException  =>

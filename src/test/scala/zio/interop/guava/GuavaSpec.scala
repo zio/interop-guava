@@ -1,16 +1,15 @@
 package zio
-package interop
+package interop.guava
 
-import java.util.{ concurrent => juc }
+import com.google.common.util.concurrent.{Futures, ListenableFuture}
+import zio.test.Assertion._
+import zio.test._
+
 import java.util.concurrent.Executors
-
-import com.google.common.util.concurrent.{ Futures, ListenableFuture }
-import zio.interop.guava._
-import zio.test.Assertion.{ isFalse, succeeds, _ }
-import zio.test.{ DefaultRunnableSpec, assertM, suite, testM, _ }
+import java.util.{concurrent => juc}
 
 object GuavaSpec extends DefaultRunnableSpec {
-  def spec: Spec[Any, TestFailure[Throwable], TestSuccess] = suite("GuavaSpec")(
+  def spec: ZSpec[Environment, Failure] = suite("GuavaSpec")(
     suite("`Task.fromListenableFuture` must")(
       testM("be lazy on the `Future` parameter") {
         var evaluated                   = false
