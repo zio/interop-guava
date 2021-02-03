@@ -46,7 +46,7 @@ jobs:
 
   publish:
     runs-on: ubuntu-20.04
-    needs: [lint, test, buildWebsite]
+    needs: [lint, test]
     if: github.event_name != 'pull_request'
     steps:
       - name: Checkout current branch
