@@ -12,7 +12,7 @@ object BuildHelper {
   val Scala213   = "2.13.4"
   val ScalaDotty = "3.0.0-M3"
 
-  private val SilencerVersion = "1.7.2"
+  private val SilencerVersion = "1.7.3"
 
   val compileOnlyDeps = Seq("com.github.ghik" % "silencer-lib" % SilencerVersion % Provided cross CrossVersion.full)
 
