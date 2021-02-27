@@ -7,7 +7,7 @@ import scalafix.sbt.ScalafixPlugin.autoImport._
 
 object BuildHelper {
   // Keep this consistent with the version in .github/workflows/ci.yml
-  val Scala211   = "2.11.12"
+  val Scala211   = "2.13.5"
   val Scala212   = "2.12.13"
   val Scala213   = "2.13.4"
   val ScalaDotty = "3.0.0-M3"
@@ -103,7 +103,7 @@ object BuildHelper {
   def stdSettings(prjName: String) = Seq(
     name := s"$prjName",
     scalacOptions := stdOptions,
-    crossScalaVersions := Seq("2.13.4", "2.12.13", "2.11.12"),
+    crossScalaVersions := Seq("2.13.4", "2.12.13", "2.13.5"),
     scalaVersion in ThisBuild := crossScalaVersions.value.head,
     scalacOptions := stdOptions ++ extraOptions(scalaVersion.value, isDotty.value, optimize = !isSnapshot.value),
     libraryDependencies ++= {
