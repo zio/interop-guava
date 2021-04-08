@@ -1,4 +1,3 @@
-addSbtPlugin("ch.epfl.lamp"                      % "sbt-dotty"                     % "0.5.4")
 addSbtPlugin("ch.epfl.scala"                     % "sbt-bloop"                     % "1.4.8")
 addSbtPlugin("ch.epfl.scala"                     % "sbt-scalafix"                  % "0.9.27")
 addSbtPlugin("com.eed3si9n"                      % "sbt-buildinfo"                 % "0.10.0")
@@ -16,3 +15,5 @@ addSbtPlugin("org.scalameta"                     % "sbt-mdoc"                   
 addSbtPlugin("org.scalameta"                     % "sbt-scalafmt"                  % "2.4.2")
 addSbtPlugin("pl.project13.scala"                % "sbt-jcstress"                  % "0.2.0")
 addSbtPlugin("pl.project13.scala"                % "sbt-jmh"                       % "0.4.0")
+
+libraryDependencies += "org.snakeyaml" % "snakeyaml-engine" % "2.2.1"
