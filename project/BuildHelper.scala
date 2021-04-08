@@ -22,9 +22,7 @@ object BuildHelper {
   val Scala213: String   = versions("2.13")
   val ScalaDotty: String = versions("3.0")
 
-  private val SilencerVersion = "1.7.3"
-
-  val compileOnlyDeps = Seq("com.github.ghik" % "silencer-lib" % SilencerVersion % Provided cross CrossVersion.full)
+  val SilencerVersion = "1.7.3"
 
   private val stdOptions = Seq(
     "-deprecation",
