@@ -119,12 +119,11 @@ object BuildHelper {
     libraryDependencies ++= {
       if (scalaVersion.value == ScalaDotty)
         Seq(
-          ("com.github.ghik" % s"silencer-lib_$Scala213" % SilencerVersion % Provided)
-            .cross(CrossVersion.for3Use2_13)
+          "com.github.ghik" % s"silencer-lib_$Scala213" % SilencerVersion % Provided
         )
       else
         Seq(
-          "com.github.ghik" % "silencer-lib" % SilencerVersion % Provided cross CrossVersion.full,
+          "com.github.ghik" % "silencer-lib"            % SilencerVersion % Provided cross CrossVersion.full,
           compilerPlugin("com.github.ghik" % "silencer-plugin" % SilencerVersion cross CrossVersion.full),
           compilerPlugin("org.typelevel"  %% "kind-projector"  % "0.11.3" cross CrossVersion.full)
         )
