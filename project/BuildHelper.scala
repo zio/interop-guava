@@ -1,4 +1,3 @@
-import dotty.tools.sbtplugin.DottyPlugin.autoImport._
 import sbt.Keys._
 import sbt._
 import sbtbuildinfo.BuildInfoKeys._
@@ -64,9 +63,9 @@ object BuildHelper {
     buildInfoPackage := packageName
   )
 
-  def extraOptions(scalaVersion: String, isDotty: Boolean, optimize: Boolean) =
+  def extraOptions(scalaVersion: String, optimize: Boolean) =
     CrossVersion.partialVersion(scalaVersion) match {
-      case _ if isDotty  =>
+      case Some((3, 0))  =>
         Seq(
           "-language:implicitConversions",
           "-Xignore-scala2-macros"
@@ -116,12 +115,12 @@ object BuildHelper {
     scalacOptions := stdOptions,
     crossScalaVersions := Seq(Scala211, Scala212, Scala213),
     ThisBuild / scalaVersion := Scala213,
-    scalacOptions := stdOptions ++ extraOptions(scalaVersion.value, isDotty.value, optimize = !isSnapshot.value),
+    scalacOptions := stdOptions ++ extraOptions(scalaVersion.value, optimize = !isSnapshot.value),
     libraryDependencies ++= {
-      if (isDotty.value)
+      if (scalaVersion.value == ScalaDotty)
         Seq(
           ("com.github.ghik" % s"silencer-lib_$Scala213" % SilencerVersion % Provided)
-            .withDottyCompat(scalaVersion.value)
+            .cross(CrossVersion.for3Use2_13)
         )
       else
         Seq(
@@ -130,7 +129,7 @@ object BuildHelper {
           compilerPlugin("org.typelevel"  %% "kind-projector"  % "0.11.3" cross CrossVersion.full)
         )
     },
-    semanticdbEnabled := !isDotty.value, // enable SemanticDB
+    semanticdbEnabled := scalaVersion.value != ScalaDotty, // enable SemanticDB
     semanticdbOptions += "-P:semanticdb:synthetics:on",
     semanticdbVersion := scalafixSemanticdb.revision, // use Scalafix compatible version
     ThisBuild / scalafixScalaBinaryVersion := CrossVersion.binaryScalaVersion(scalaVersion.value),
