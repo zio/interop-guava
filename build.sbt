@@ -25,7 +25,7 @@ inThisBuild(
 addCommandAlias("fix", "; all compile:scalafix test:scalafix; all scalafmtSbt scalafmtAll")
 addCommandAlias("check", "; scalafmtSbtCheck; scalafmtCheckAll; compile:scalafix --check; test:scalafix --check")
 
-val zioVersion = "1.0.8"
+val zioVersion = "1.0.9"
 
 lazy val guava = project
   .in(file("."))
