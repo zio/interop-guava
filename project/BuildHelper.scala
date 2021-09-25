@@ -17,14 +17,14 @@ object BuildHelper {
     val list = yaml.get("jobs").get("test").get("strategy").get("matrix").get("scala").asScala
     list.map(v => (v.split('.').take(2).mkString("."), v)).toMap
   }
-  val Scala211: String   = versions("2.11")
-  val Scala212: String   = versions("2.12")
-  val Scala213: String   = versions("2.13")
-  val ScalaDotty: String = versions("3.0")
+  val Scala211: String                      = versions("2.11")
+  val Scala212: String                      = versions("2.12")
+  val Scala213: String                      = versions("2.13")
+  val ScalaDotty: String                    = versions("3.0")
 
   val SilencerVersion = "1.7.6"
 
-  private val stdOptions = Seq(
+  private val stdOptions                          = Seq(
     "-deprecation",
     "-encoding",
     "UTF-8",
@@ -38,7 +38,7 @@ object BuildHelper {
     }
   }
 
-  private val std2xOptions = Seq(
+  private val std2xOptions                        = Seq(
     "-language:higherKinds",
     "-language:existentials",
     "-explaintypes",
