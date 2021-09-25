@@ -36,7 +36,7 @@ package object guava {
       Task.fail(e)
   }
 
-  private def unwrapDone[A](isFatal: Throwable => Boolean)(f: ListenableFuture[A]): Task[A] =
+  private def unwrapDone[A](isFatal: Throwable => Boolean)(f: ListenableFuture[A]): Task[A]          =
     try Task.succeedNow(f.get())
     catch catchFromGet(isFatal)
 
@@ -65,7 +65,7 @@ package object guava {
     def toZio: Task[A] = Task.fromListenableFuture(lfUio)
   }
 
-  implicit class TaskObjListenableFutureOps(private val taskObj: Task.type) extends AnyVal {
+  implicit class TaskObjListenableFutureOps(private val taskObj: Task.type)          extends AnyVal {
     def fromListenableFuture[A](make: juc.Executor => ListenableFuture[A]): Task[A] =
       guava.fromListenableFuture(make)
 
@@ -73,7 +73,7 @@ package object guava {
       guava.fromListenableFuture(lfUio)
   }
 
-  implicit class ZioObjListenableFutureOps(private val zioObj: ZIO.type) extends AnyVal {
+  implicit class ZioObjListenableFutureOps(private val zioObj: ZIO.type)             extends AnyVal {
     def fromListenableFuture[A](make: juc.Executor => ListenableFuture[A]): Task[A] =
       guava.fromListenableFuture(make)
 
@@ -81,7 +81,7 @@ package object guava {
       guava.fromListenableFuture(lfUio)
   }
 
-  implicit class FiberObjOps(private val fiberObj: Fiber.type) extends AnyVal {
+  implicit class FiberObjOps(private val fiberObj: Fiber.type)                       extends AnyVal {
     def fromListenableFuture[A](thunk: => ListenableFuture[A]): Fiber[Throwable, A] = {
       lazy val lf: ListenableFuture[A] = thunk
 
@@ -99,7 +99,7 @@ package object guava {
               UIO.succeedNow(None)
           }
 
-        final def getRef[A](ref: FiberRef[A]): UIO[A] = UIO(ref.initial)
+        final def getRef[A](ref: FiberRef[A]): UIO[A]      = UIO(ref.initial)
 
         final def interruptAs(id: Fiber.Id): UIO[Exit[Throwable, A]] = join.fold(Exit.fail, Exit.succeed)
 
@@ -109,12 +109,12 @@ package object guava {
     }
   }
 
-  implicit class TaskListenableFutureOps[A](private val io: Task[A]) extends AnyVal {
+  implicit class TaskListenableFutureOps[A](private val io: Task[A])                 extends AnyVal {
     def toListenableFuture: UIO[ListenableFuture[A]] =
       io.fold(Futures.immediateFailedFuture[A], Futures.immediateFuture[A])
   }
 
-  implicit class IOListenableFutureOps[E, A](private val io: IO[E, A]) extends AnyVal {
+  implicit class IOListenableFutureOps[E, A](private val io: IO[E, A])               extends AnyVal {
     def toListenableFutureWith(f: E => Throwable): UIO[ListenableFuture[A]] =
       io.mapError(f).toListenableFuture
   }
