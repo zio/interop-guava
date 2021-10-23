@@ -11,7 +11,7 @@ import java.util.{concurrent => juc}
 object GuavaSpec extends DefaultRunnableSpec {
   def spec: ZSpec[Environment, Failure] = suite("GuavaSpec")(
     suite("`Task.fromListenableFuture` must")(
-      testM("be lazy on the `Future` parameter") {
+      test("be lazy on the `Future` parameter") {
         var evaluated                   = false
         def ftr: ListenableFuture[Unit] =
           Futures.submitAsync(
@@ -21,37 +21,37 @@ object GuavaSpec extends DefaultRunnableSpec {
             },
             Executors.newCachedThreadPool()
           )
-        assertM(Task.fromListenableFuture(UIO.effectTotal(ftr)).when(false).as(evaluated))(isFalse)
+        assertM(Task.fromListenableFuture(UIO.succeed(ftr)).when(false).as(evaluated))(isFalse)
       },
-      testM("catch exceptions thrown by make block") {
+      test("catch exceptions thrown by make block") {
         val ex                                                    = new Exception("no future for you!")
         lazy val noFuture: juc.Executor => ListenableFuture[Unit] = _ => throw ex
-        assertM(Task.fromListenableFuture(noFuture).run)(fails(equalTo(ex)))
+        assertM(Task.fromListenableFuture(noFuture).exit)(fails(equalTo(ex)))
       },
-      testM("return an `IO` that fails if `Future` fails 1") {
+      test("return an `IO` that fails if `Future` fails 1") {
         val ex                                   = new Exception("no value for you!")
-        val noValue: UIO[ListenableFuture[Unit]] = UIO.effectTotal(Futures.immediateFailedFuture(ex))
-        assertM(Task.fromListenableFuture(noValue).run)(fails[Throwable](equalTo(ex)))
+        val noValue: UIO[ListenableFuture[Unit]] = UIO.succeed(Futures.immediateFailedFuture(ex))
+        assertM(Task.fromListenableFuture(noValue).exit)(fails[Throwable](equalTo(ex)))
       },
-      testM("return an `IO` that fails if `Future` fails 2") {
+      test("return an `IO` that fails if `Future` fails 2") {
         val ex                                   = new Exception("no value for you!")
         val noValue: UIO[ListenableFuture[Unit]] =
-          UIO.effectTotal(Futures.submitAsync(() => Futures.immediateFailedFuture(ex), Executors.newCachedThreadPool()))
-        assertM(Task.fromListenableFuture(noValue).run)(fails[Throwable](equalTo(ex)))
+          UIO.succeed(Futures.submitAsync(() => Futures.immediateFailedFuture(ex), Executors.newCachedThreadPool()))
+        assertM(Task.fromListenableFuture(noValue).exit)(fails[Throwable](equalTo(ex)))
       },
-      testM("return an `IO` that produces the value from `Future`") {
+      test("return an `IO` that produces the value from `Future`") {
         val someValue: UIO[ListenableFuture[Int]] =
-          UIO.effectTotal(Futures.submitAsync(() => Futures.immediateFuture(42), Executors.newCachedThreadPool()))
-        assertM(Task.fromListenableFuture(someValue).run)(succeeds(equalTo(42)))
+          UIO.succeed(Futures.submitAsync(() => Futures.immediateFuture(42), Executors.newCachedThreadPool()))
+        assertM(Task.fromListenableFuture(someValue).exit)(succeeds(equalTo(42)))
       },
-      testM("handle null produced by the completed `Future`") {
-        val someValue: UIO[ListenableFuture[String]] = UIO.effectTotal(Futures.immediateFuture[String](null))
+      test("handle null produced by the completed `Future`") {
+        val someValue: UIO[ListenableFuture[String]] = UIO.succeed(Futures.immediateFuture[String](null))
         assertM(Task.fromListenableFuture[String](someValue).map(Option(_)))(isNone)
       },
-      testM("be referentially transparent") {
+      test("be referentially transparent") {
         var n    = 0
         val task = ZIO.fromListenableFuture(
-          UIO.effectTotal(Futures.submitAsync(() => Futures.immediateFuture(n += 1), Executors.newCachedThreadPool()))
+          UIO.succeed(Futures.submitAsync(() => Futures.immediateFuture(n += 1), Executors.newCachedThreadPool()))
         )
         for {
           _ <- task
@@ -60,7 +60,7 @@ object GuavaSpec extends DefaultRunnableSpec {
       }
     ),
     suite("`Task.toListenableFuture` must")(
-      testM("produce always a successful `IO` of `Future`") {
+      test("produce always a successful `IO` of `Future`") {
         val failedIO = IO.fail[Throwable](new Exception("IOs also can fail"))
         assertM(failedIO.toListenableFuture)(isSubtype[ListenableFuture[Unit]](anything))
       },
@@ -70,24 +70,24 @@ object GuavaSpec extends DefaultRunnableSpec {
         val _                                          = polyIO // avoid warning
         assert(polyIO)(anything)
       },
-      testM("return a `ListenableFuture` that fails if `IO` fails") {
+      test("return a `ListenableFuture` that fails if `IO` fails") {
         val ex                       = new Exception("IOs also can fail")
         val failedIO: Task[Unit]     = IO.fail[Throwable](ex)
         val failedFuture: Task[Unit] = failedIO.toListenableFuture.flatMap(f => Task(f.get()))
-        assertM(failedFuture.run)(
+        assertM(failedFuture.exit)(
           fails[Throwable](hasField("message", _.getMessage, equalTo("java.lang.Exception: IOs also can fail")))
         )
       },
-      testM("return a `ListenableFuture` that produces the value from `IO`") {
+      test("return a `ListenableFuture` that produces the value from `IO`") {
         val someIO = Task.succeed[Int](42)
         assertM(someIO.toListenableFuture.map(_.get()))(equalTo(42))
       }
     ),
     suite("`Task.toListenableFutureWith` must")(
-      testM("convert error of type `E` to `Throwable`") {
+      test("convert error of type `E` to `Throwable`") {
         val failedIO: IO[String, Unit] = IO.fail[String]("IOs also can fail")
         val failedFuture: Task[Unit]   = failedIO.toListenableFutureWith(new Exception(_)).flatMap(f => Task(f.get()))
-        assertM(failedFuture.run)(
+        assertM(failedFuture.exit)(
           fails[Throwable](hasField("message", _.getMessage, equalTo("java.lang.Exception: IOs also can fail")))
         )
       }
@@ -106,25 +106,25 @@ object GuavaSpec extends DefaultRunnableSpec {
         Fiber.fromListenableFuture(ftr)
         assert(evaluated)(isFalse)
       },
-      testM("catch exceptions thrown by lazy block") {
+      test("catch exceptions thrown by lazy block") {
         val ex                               = new Exception("no future for you!")
         def noFuture: ListenableFuture[Unit] = throw ex
-        assertM(Fiber.fromListenableFuture(noFuture).join.run)(fails(equalTo(ex)))
+        assertM(Fiber.fromListenableFuture(noFuture).join.exit)(fails(equalTo(ex)))
       },
-      testM("return an `IO` that fails if `Future` fails 1") {
+      test("return an `IO` that fails if `Future` fails 1") {
         val ex                              = new Exception("no value for you!")
         def noValue: ListenableFuture[Unit] = Futures.immediateFailedFuture(ex)
-        assertM(Fiber.fromListenableFuture(noValue).join.run)(fails[Throwable](equalTo(ex)))
+        assertM(Fiber.fromListenableFuture(noValue).join.exit)(fails[Throwable](equalTo(ex)))
       },
-      testM("return an `IO` that fails if `Future` fails 2") {
+      test("return an `IO` that fails if `Future` fails 2") {
         val ex                              = new Exception("no value for you!")
         def noValue: ListenableFuture[Unit] =
           Futures.submitAsync(() => Futures.immediateFailedFuture(ex), Executors.newCachedThreadPool())
-        assertM(Fiber.fromListenableFuture(noValue).join.run)(fails[Throwable](equalTo(ex)))
+        assertM(Fiber.fromListenableFuture(noValue).join.exit)(fails[Throwable](equalTo(ex)))
       },
-      testM("return an `IO` that produces the value from `Future`") {
+      test("return an `IO` that produces the value from `Future`") {
         def someValue: ListenableFuture[Int] = Futures.immediateFuture(42)
-        assertM(Fiber.fromListenableFuture(someValue).join.run)(succeeds(equalTo(42)))
+        assertM(Fiber.fromListenableFuture(someValue).join.exit)(succeeds(equalTo(42)))
       }
     )
   )

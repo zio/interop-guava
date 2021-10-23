@@ -41,13 +41,13 @@ package object guava {
     catch catchFromGet(isFatal)
 
   def fromListenableFuture[A](make: juc.Executor => ListenableFuture[A]): Task[A] =
-    Task.effectSuspendTotalWith { (p, _) =>
-      val ex: juc.Executor = p.executor.asEC.execute(_)
-      Task.effect(make(ex)).flatMap { lf =>
+    Task.suspendSucceedWith { (p, _) =>
+      val ex: juc.Executor = p.executor.asExecutionContext.execute(_)
+      Task.attempt(make(ex)).flatMap { lf =>
         if (lf.isDone)
           unwrapDone(p.fatal)(lf)
         else
-          Task.effectAsync { cb =>
+          Task.async { cb =>
             val fcb = new FutureCallback[A] {
               def onFailure(t: Throwable): Unit = cb(catchFromGet(p.fatal).lift(t).getOrElse(Task.die(t)))
 
@@ -86,24 +86,25 @@ package object guava {
       lazy val lf: ListenableFuture[A] = thunk
 
       new Fiber.Synthetic.Internal[Throwable, A] {
-        override def await: UIO[Exit[Throwable, A]] = Task.fromListenableFuture(_ => lf).run
 
-        override def poll: UIO[Option[Exit[Throwable, A]]] =
-          UIO.effectSuspendTotal {
+        override def await(implicit trace: ZTraceElement): UIO[Exit[Throwable, A]] = Task.fromListenableFuture(_ => lf).exit
+
+        override def poll(implicit trace: ZTraceElement): UIO[Option[Exit[Throwable, A]]] =
+          UIO.suspendSucceed {
             if (lf.isDone)
               Task
-                .effectSuspendWith((p, _) => unwrapDone(p.fatal)(lf))
+                .suspendWith((p, _) => unwrapDone(p.fatal)(lf))
                 .fold(Exit.fail, Exit.succeed)
                 .map(Some(_))
             else
               UIO.succeedNow(None)
           }
 
-        final def getRef[A](ref: FiberRef[A]): UIO[A] = UIO(ref.initial)
+        final def getRef[A](ref: FiberRef.Runtime[A])(implicit trace: ZTraceElement): UIO[A] = ref.get
 
-        final def interruptAs(id: Fiber.Id): UIO[Exit[Throwable, A]] = join.fold(Exit.fail, Exit.succeed)
+        final def interruptAs(fiberId: FiberId)(implicit trace: ZTraceElement): UIO[Exit[Throwable,A]] = join.fold(Exit.fail, Exit.succeed)
 
-        final def inheritRefs: UIO[Unit] = UIO.unit
+        final def inheritRefs(implicit trace: ZTraceElement): UIO[Unit] = UIO.unit
 
       }
     }
