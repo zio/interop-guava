@@ -87,7 +87,8 @@ package object guava {
 
       new Fiber.Synthetic.Internal[Throwable, A] {
 
-        override def await(implicit trace: ZTraceElement): UIO[Exit[Throwable, A]] = Task.fromListenableFuture(_ => lf).exit
+        override def await(implicit trace: ZTraceElement): UIO[Exit[Throwable, A]] =
+          Task.fromListenableFuture(_ => lf).exit
 
         override def poll(implicit trace: ZTraceElement): UIO[Option[Exit[Throwable, A]]] =
           UIO.suspendSucceed {
@@ -102,7 +103,8 @@ package object guava {
 
         final def getRef[A](ref: FiberRef.Runtime[A])(implicit trace: ZTraceElement): UIO[A] = ref.get
 
-        final def interruptAs(fiberId: FiberId)(implicit trace: ZTraceElement): UIO[Exit[Throwable,A]] = join.fold(Exit.fail, Exit.succeed)
+        final def interruptAs(fiberId: FiberId)(implicit trace: ZTraceElement): UIO[Exit[Throwable, A]] =
+          join.fold(Exit.fail, Exit.succeed)
 
         final def inheritRefs(implicit trace: ZTraceElement): UIO[Unit] = UIO.unit
 

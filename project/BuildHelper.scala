@@ -20,7 +20,7 @@ object BuildHelper {
   val Scala211: String                      = versions("2.11")
   val Scala212: String                      = versions("2.12")
   val Scala213: String                      = versions("2.13")
-  val ScalaDotty: String                    = versions("3.0")
+  val ScalaDotty: String                    = versions("3.1")
 
   val SilencerVersion = "1.7.6"
 
@@ -111,7 +111,7 @@ object BuildHelper {
   def stdSettings(prjName: String) = Seq(
     name                                   := s"$prjName",
     scalacOptions                          := stdOptions,
-    crossScalaVersions                     := Seq(Scala211, Scala212, Scala213),
+    crossScalaVersions                     := Seq(Scala211, Scala212, Scala213, ScalaDotty),
     ThisBuild / scalaVersion               := Scala213,
     scalacOptions                          := stdOptions ++ extraOptions(scalaVersion.value, optimize = !isSnapshot.value),
     libraryDependencies ++= {
