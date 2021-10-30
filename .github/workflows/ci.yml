@@ -25,15 +25,42 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Lint code
-        run: sbt check
+        run: ./sbt check
+
+  doc:
+    runs-on: ubuntu-20.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v2.3.5
+      - name: Setup Scala and Java
+        uses: olafurpg/setup-scala@v13
+      - name: Cache scala dependencies
+        uses: coursier/cache-action@v6
+      - name: Check generation of ScalaDoc
+        run: ./sbt +Test/doc
+
+  publishLocal:
+    runs-on: ubuntu-20.04
+    timeout-minutes: 30
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v2.3.5
+      - name: Setup Scala and Java
+        uses: olafurpg/setup-scala@v13
+      - name: Cache scala dependencies
+        uses: coursier/cache-action@v6
+      - name: Check that building packages works
+        run: ./sbt +publishLocal
 
   test:
     runs-on: ubuntu-20.04
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        java: ['adopt@1.8', 'adopt@1.11']
         scala: ['2.11.12', '2.12.15', '2.13.6', '3.1.0']
+        platform: ['JVM']
     steps:
       - name: Checkout current branch
         uses: actions/checkout@v2.3.5
@@ -41,16 +68,34 @@ jobs:
           fetch-depth: 0
       - name: Setup Scala and Java
         uses: olafurpg/setup-scala@v13
+      - name: Cache scala dependencies
+        uses: coursier/cache-action@v6
+      - name: Run tests
+        run: ./sbt ++${{ matrix.scala }}! test
+
+  testJvms:
+    runs-on: ubuntu-20.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        java: ['11', '17']
+        platform: ['JVM']
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v2.3.5
+      - name: Setup Scala and Java
+        uses: olafurpg/setup-scala@v13
         with:
           java-version: ${{ matrix.java }}
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
-      - name: Run tests
-        run: sbt ++${{ matrix.scala }}! test
+      - name: Test on different JVM versions
+        run: ./sbt test
 
   ci:
     runs-on: ubuntu-20.04
-    needs: [lint, test]
+    needs: [lint, doc, publishLocal, test, testJvms]
     steps:
       - name: Aggregate of lint, and all tests
         run: echo "ci passed"
@@ -69,7 +114,7 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Release artifacts
-        run: sbt ci-release
+        run: ./sbt ci-release
         env:
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
