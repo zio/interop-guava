@@ -90,6 +90,8 @@ package object guava {
         override def await(implicit trace: ZTraceElement): UIO[Exit[Throwable, A]] =
           Task.fromListenableFuture(_ => lf).exit
 
+        def children(implicit trace: ZTraceElement): UIO[Chunk[Fiber.Runtime[_, _]]] = ZIO.succeedNow(Chunk.empty)
+
         override def poll(implicit trace: ZTraceElement): UIO[Option[Exit[Throwable, A]]] =
           UIO.suspendSucceed {
             if (lf.isDone)
@@ -102,6 +104,8 @@ package object guava {
           }
 
         final def getRef[A](ref: FiberRef.Runtime[A])(implicit trace: ZTraceElement): UIO[A] = ref.get
+
+        def id: FiberId = FiberId.None
 
         final def interruptAs(fiberId: FiberId)(implicit trace: ZTraceElement): UIO[Exit[Throwable, A]] =
           join.fold(Exit.fail, Exit.succeed)
