@@ -19,20 +19,22 @@ package zio.interop
 import com.google.common.util.concurrent.{FutureCallback, Futures, ListenableFuture}
 import zio._
 
-import java.util.concurrent.CompletionException
+import java.util.concurrent.{CancellationException, CompletionException}
 import java.util.{concurrent => juc}
 import scala.concurrent.ExecutionException
 
 package object guava {
 
   private def catchFromGet(isFatal: Throwable => Boolean): PartialFunction[Throwable, Task[Nothing]] = {
-    case e: CompletionException  =>
+    case e: CompletionException   =>
       Task.fail(e.getCause)
-    case e: ExecutionException   =>
+    case e: ExecutionException    =>
       Task.fail(e.getCause)
-    case _: InterruptedException =>
+    case _: InterruptedException  =>
       Task.interrupt
-    case e if !isFatal(e)        =>
+    case _: CancellationException =>
+      Task.interrupt
+    case e if !isFatal(e)         =>
       Task.fail(e)
   }
 
@@ -47,13 +49,14 @@ package object guava {
         if (lf.isDone)
           unwrapDone(p.fatal)(lf)
         else
-          Task.async { cb =>
+          Task.asyncInterrupt { cb =>
             val fcb = new FutureCallback[A] {
               def onFailure(t: Throwable): Unit = cb(catchFromGet(p.fatal).lift(t).getOrElse(Task.die(t)))
 
               def onSuccess(result: A): Unit = cb(Task.succeedNow(result))
             }
             Futures.addCallback(lf, fcb, ex)
+            Left(UIO(lf.cancel(false)))
           }
       }
     }
@@ -108,7 +111,7 @@ package object guava {
         def id: FiberId = FiberId.None
 
         final def interruptAs(fiberId: FiberId)(implicit trace: ZTraceElement): UIO[Exit[Throwable, A]] =
-          join.fold(Exit.fail, Exit.succeed)
+          UIO(lf.cancel(false)) *> join.fold(Exit.fail, Exit.succeed)
 
         final def inheritRefs(implicit trace: ZTraceElement): UIO[Unit] = UIO.unit
 
