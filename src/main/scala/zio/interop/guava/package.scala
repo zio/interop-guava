@@ -56,7 +56,7 @@ package object guava {
               def onSuccess(result: A): Unit = cb(Task.succeedNow(result))
             }
             Futures.addCallback(lf, fcb, ex)
-            Left(UIO(lf.cancel(false)))
+            Left(ZIO.succeed(lf.cancel(false)))
           }
       }
     }
@@ -65,15 +65,7 @@ package object guava {
     lfUio.flatMap(lf => fromListenableFuture(_ => lf))
 
   implicit class ListenableFutureOps[A](private val lfUio: UIO[ListenableFuture[A]]) extends AnyVal {
-    def toZio: Task[A] = Task.fromListenableFuture(lfUio)
-  }
-
-  implicit class TaskObjListenableFutureOps(private val taskObj: Task.type) extends AnyVal {
-    def fromListenableFuture[A](make: juc.Executor => ListenableFuture[A]): Task[A] =
-      guava.fromListenableFuture(make)
-
-    def fromListenableFuture[A](lfUio: UIO[ListenableFuture[A]]): Task[A] =
-      guava.fromListenableFuture(lfUio)
+    def toZio: Task[A] = ZIO.fromListenableFuture(lfUio)
   }
 
   implicit class ZioObjListenableFutureOps(private val zioObj: ZIO.type) extends AnyVal {
@@ -106,12 +98,12 @@ package object guava {
               UIO.succeedNow(None)
           }
 
-        final def getRef[A](ref: FiberRef.Runtime[A])(implicit trace: ZTraceElement): UIO[A] = ref.get
+        final def getRef[A](ref: FiberRef[A])(implicit trace: ZTraceElement): UIO[A] = ref.get
 
         def id: FiberId = FiberId.None
 
         final def interruptAs(fiberId: FiberId)(implicit trace: ZTraceElement): UIO[Exit[Throwable, A]] =
-          UIO(lf.cancel(false)) *> join.fold(Exit.fail, Exit.succeed)
+          ZIO.succeed(lf.cancel(false)) *> join.fold(Exit.fail, Exit.succeed)
 
         final def inheritRefs(implicit trace: ZTraceElement): UIO[Unit] = UIO.unit
 
