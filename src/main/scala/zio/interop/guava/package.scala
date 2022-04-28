@@ -56,7 +56,7 @@ package object guava {
               def onSuccess(result: A): Unit = cb(Task.succeedNow(result))
             }
             Futures.addCallback(lf, fcb, ex)
-            Left(UIO(lf.cancel(false)))
+            Left(ZIO.succeed(lf.cancel(false)))
           }
       }
     }
@@ -65,15 +65,7 @@ package object guava {
     lfUio.flatMap(lf => fromListenableFuture(_ => lf))
 
   implicit class ListenableFutureOps[A](private val lfUio: UIO[ListenableFuture[A]]) extends AnyVal {
-    def toZio: Task[A] = Task.fromListenableFuture(lfUio)
-  }
-
-  implicit class TaskObjListenableFutureOps(private val taskObj: Task.type) extends AnyVal {
-    def fromListenableFuture[A](make: juc.Executor => ListenableFuture[A]): Task[A] =
-      guava.fromListenableFuture(make)
-
-    def fromListenableFuture[A](lfUio: UIO[ListenableFuture[A]]): Task[A] =
-      guava.fromListenableFuture(lfUio)
+    def toZio: Task[A] = ZIO.fromListenableFuture(lfUio)
   }
 
   implicit class ZioObjListenableFutureOps(private val zioObj: ZIO.type) extends AnyVal {
@@ -93,7 +85,8 @@ package object guava {
         override def await(implicit trace: ZTraceElement): UIO[Exit[Throwable, A]] =
           Task.fromListenableFuture(_ => lf).exit
 
-        def children(implicit trace: ZTraceElement): UIO[Chunk[Fiber.Runtime[_, _]]] = ZIO.succeedNow(Chunk.empty)
+        override def children(implicit trace: ZTraceElement): UIO[Chunk[Fiber.Runtime[_, _]]] =
+          ZIO.succeedNow(Chunk.empty)
 
         override def poll(implicit trace: ZTraceElement): UIO[Option[Exit[Throwable, A]]] =
           UIO.suspendSucceed {
@@ -106,14 +99,12 @@ package object guava {
               UIO.succeedNow(None)
           }
 
-        final def getRef[A](ref: FiberRef.Runtime[A])(implicit trace: ZTraceElement): UIO[A] = ref.get
+        override def id: FiberId = FiberId.None
 
-        def id: FiberId = FiberId.None
+        final override def interruptAs(fiberId: FiberId)(implicit trace: ZTraceElement): UIO[Exit[Throwable, A]] =
+          ZIO.succeed(lf.cancel(false)) *> join.fold(Exit.fail, Exit.succeed)
 
-        final def interruptAs(fiberId: FiberId)(implicit trace: ZTraceElement): UIO[Exit[Throwable, A]] =
-          UIO(lf.cancel(false)) *> join.fold(Exit.fail, Exit.succeed)
-
-        final def inheritRefs(implicit trace: ZTraceElement): UIO[Unit] = UIO.unit
+        final override def inheritRefs(implicit trace: ZTraceElement): UIO[Unit] = UIO.unit
 
       }
     }
