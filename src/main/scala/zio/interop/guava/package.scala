@@ -26,42 +26,49 @@ import scala.concurrent.ExecutionException
 package object guava {
 
   private def catchFromGet(isFatal: Throwable => Boolean): PartialFunction[Throwable, Task[Nothing]] = {
-    case e: CompletionException   =>
-      Task.fail(e.getCause)
-    case e: ExecutionException    =>
-      Task.fail(e.getCause)
-    case _: InterruptedException  =>
-      Task.interrupt
-    case _: CancellationException =>
-      Task.interrupt
-    case e if !isFatal(e)         =>
-      Task.fail(e)
+    case e: CompletionException if e.getCause.ne(null) =>
+      ZIO.fail(e.getCause)
+    case e: ExecutionException if e.getCause.ne(null)  =>
+      ZIO.fail(e.getCause)
+    case _: InterruptedException                       =>
+      ZIO.interrupt
+    case _: CancellationException                      =>
+      ZIO.interrupt
+    case e if !isFatal(e)                              =>
+      ZIO.fail(e)
   }
 
   private def unwrapDone[A](isFatal: Throwable => Boolean)(f: ListenableFuture[A]): Task[A] =
-    try Task.succeedNow(f.get())
+    try ZIO.succeedNow(f.get())
     catch catchFromGet(isFatal)
 
-  def fromListenableFuture[A](make: juc.Executor => ListenableFuture[A]): Task[A] =
-    Task.suspendSucceedWith { (p, _) =>
-      val ex: juc.Executor = p.executor.asExecutionContext.execute(_)
-      Task.attempt(make(ex)).flatMap { lf =>
-        if (lf.isDone)
-          unwrapDone(p.fatal)(lf)
-        else
-          Task.asyncInterrupt { cb =>
-            val fcb = new FutureCallback[A] {
-              def onFailure(t: Throwable): Unit = cb(catchFromGet(p.fatal).lift(t).getOrElse(Task.die(t)))
+  def fromListenableFuture[A](make: juc.Executor => ListenableFuture[A])(implicit trace: Trace): Task[A] =
+    ZIO.uninterruptibleMask { restore =>
+      ZIO.executor.flatMap { executor =>
+        val ex: juc.Executor = executor.asExecutionContext.execute(_)
+        ZIO.attempt(make(ex)).flatMap { lf =>
+          ZIO.isFatalWith { fatal =>
+            if (lf.isDone)
+              unwrapDone(fatal)(lf)
+            else {
+              restore {
+                ZIO.asyncInterrupt[Any, Throwable, A] { cb =>
+                  val fcb = new FutureCallback[A] {
+                    def onFailure(t: Throwable): Unit = cb(catchFromGet(fatal).lift(t).getOrElse(ZIO.die(t)))
 
-              def onSuccess(result: A): Unit = cb(Task.succeedNow(result))
+                    def onSuccess(result: A): Unit = cb(ZIO.succeedNow(result))
+                  }
+                  Futures.addCallback(lf, fcb, ex)
+                  Left(ZIO.succeed(lf.cancel(false)))
+                }
+              }.onInterrupt(ZIO.succeed(lf.cancel(false)))
             }
-            Futures.addCallback(lf, fcb, ex)
-            Left(ZIO.succeed(lf.cancel(false)))
           }
+        }
       }
     }
 
-  def fromListenableFuture[A](lfUio: UIO[ListenableFuture[A]]): Task[A] =
+  def fromListenableFuture[A](lfUio: UIO[ListenableFuture[A]])(implicit trace: Trace): Task[A] =
     lfUio.flatMap(lf => fromListenableFuture(_ => lf))
 
   implicit class ListenableFutureOps[A](private val lfUio: UIO[ListenableFuture[A]]) extends AnyVal {
@@ -82,29 +89,29 @@ package object guava {
 
       new Fiber.Synthetic.Internal[Throwable, A] {
 
-        override def await(implicit trace: ZTraceElement): UIO[Exit[Throwable, A]] =
-          Task.fromListenableFuture(_ => lf).exit
+        override def await(implicit trace: Trace): UIO[Exit[Throwable, A]] =
+          ZIO.fromListenableFuture(_ => lf).exit
 
-        override def children(implicit trace: ZTraceElement): UIO[Chunk[Fiber.Runtime[_, _]]] =
+        override def children(implicit trace: Trace): UIO[Chunk[Fiber.Runtime[_, _]]] =
           ZIO.succeedNow(Chunk.empty)
 
-        override def poll(implicit trace: ZTraceElement): UIO[Option[Exit[Throwable, A]]] =
-          UIO.suspendSucceed {
+        override def poll(implicit trace: Trace): UIO[Option[Exit[Throwable, A]]] =
+          ZIO.suspendSucceed {
             if (lf.isDone)
-              Task
-                .suspendWith((p, _) => unwrapDone(p.fatal)(lf))
+              ZIO
+                .isFatalWith(fatal => unwrapDone(fatal)(lf))
                 .fold(Exit.fail, Exit.succeed)
                 .map(Some(_))
             else
-              UIO.succeedNow(None)
+              ZIO.succeedNow(None)
           }
 
         override def id: FiberId = FiberId.None
 
-        final override def interruptAs(fiberId: FiberId)(implicit trace: ZTraceElement): UIO[Exit[Throwable, A]] =
+        final override def interruptAs(fiberId: FiberId)(implicit trace: Trace): UIO[Exit[Throwable, A]] =
           ZIO.succeed(lf.cancel(false)) *> join.fold(Exit.fail, Exit.succeed)
 
-        final override def inheritRefs(implicit trace: ZTraceElement): UIO[Unit] = UIO.unit
+        final override def inheritRefs(implicit trace: Trace): UIO[Unit] = ZIO.unit
 
       }
     }
