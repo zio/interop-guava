@@ -8,8 +8,8 @@ import zio.test._
 import java.util.concurrent.Executors
 import java.util.{concurrent => juc}
 
-object GuavaSpec extends DefaultRunnableSpec {
-  def spec: ZSpec[Environment, Failure] = suite("GuavaSpec")(
+object GuavaSpec extends ZIOSpecDefault {
+  def spec: ZSpec[Environment, Any] = suite("GuavaSpec")(
     suite("`Task.fromListenableFuture` must")(
       test("be lazy on the `Future` parameter") {
         var evaluated                   = false
@@ -73,7 +73,7 @@ object GuavaSpec extends DefaultRunnableSpec {
       test("return a `ListenableFuture` that fails if `IO` fails") {
         val ex                       = new Exception("IOs also can fail")
         val failedIO: Task[Unit]     = IO.fail[Throwable](ex)
-        val failedFuture: Task[Unit] = failedIO.toListenableFuture.flatMap(f => Task(f.get()))
+        val failedFuture: Task[Unit] = failedIO.toListenableFuture.flatMap(f => Task.attempt(f.get()))
         assertM(failedFuture.exit)(
           fails[Throwable](hasField("message", _.getMessage, equalTo("java.lang.Exception: IOs also can fail")))
         )
@@ -86,7 +86,8 @@ object GuavaSpec extends DefaultRunnableSpec {
     suite("`Task.toListenableFutureWith` must")(
       test("convert error of type `E` to `Throwable`") {
         val failedIO: IO[String, Unit] = IO.fail[String]("IOs also can fail")
-        val failedFuture: Task[Unit]   = failedIO.toListenableFutureWith(new Exception(_)).flatMap(f => Task(f.get()))
+        val failedFuture: Task[Unit]   =
+          failedIO.toListenableFutureWith(new Exception(_)).flatMap(f => Task.attempt(f.get()))
         assertM(failedFuture.exit)(
           fails[Throwable](hasField("message", _.getMessage, equalTo("java.lang.Exception: IOs also can fail")))
         )
