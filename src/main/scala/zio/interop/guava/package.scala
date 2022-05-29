@@ -26,15 +26,15 @@ import scala.concurrent.ExecutionException
 package object guava {
 
   private def catchFromGet(isFatal: Throwable => Boolean): PartialFunction[Throwable, Task[Nothing]] = {
-    case e: CompletionException if e.getCause.ne(null) =>
+    case e: CompletionException   =>
       ZIO.fail(e.getCause)
-    case e: ExecutionException if e.getCause.ne(null)  =>
+    case e: ExecutionException    =>
       ZIO.fail(e.getCause)
-    case _: InterruptedException                       =>
+    case _: InterruptedException  =>
       ZIO.interrupt
-    case _: CancellationException                      =>
+    case _: CancellationException =>
       ZIO.interrupt
-    case e if !isFatal(e)                              =>
+    case e if !isFatal(e)         =>
       ZIO.fail(e)
   }
 
