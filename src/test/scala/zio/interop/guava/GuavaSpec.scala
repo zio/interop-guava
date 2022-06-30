@@ -56,7 +56,7 @@ object GuavaSpec extends ZIOSpecDefault {
         for {
           _ <- task
           _ <- task
-        } yield assert(n)(equalTo(2))
+        } yield assertTrue(n == 2)
       }
     ),
     suite("`ZIO.toListenableFuture` must")(
@@ -105,7 +105,7 @@ object GuavaSpec extends ZIOSpecDefault {
             Executors.newCachedThreadPool()
           )
         Fiber.fromListenableFuture(ftr)
-        assert(evaluated)(isFalse)
+        assertTrue(!evaluated)
       },
       test("catch exceptions thrown by lazy block") {
         val ex                               = new Exception("no future for you!")

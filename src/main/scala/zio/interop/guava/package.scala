@@ -108,10 +108,10 @@ package object guava {
 
         override def id: FiberId = FiberId.None
 
-        final override def interruptAs(fiberId: FiberId)(implicit trace: Trace): UIO[Exit[Throwable, A]] =
-          ZIO.succeed(lf.cancel(false)) *> join.fold(Exit.fail, Exit.succeed)
+        override def interruptAsFork(fiberId: FiberId)(implicit trace: Trace): UIO[Unit] =
+          ZIO.attempt(lf.cancel(false)).ignore
 
-        final override def inheritRefs(implicit trace: Trace): UIO[Unit] = ZIO.unit
+        override def inheritAll(implicit trace: Trace): UIO[Unit] = ZIO.unit
 
       }
     }
