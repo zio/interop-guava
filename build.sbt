@@ -41,6 +41,6 @@ lazy val docs = project
   .in(file("zio-interop-guava-docs"))
   .settings(
     publish / skip := true,
-    moduleName     := "zio-parser-docs"
+    moduleName     := "zio-interop-guava-docs"
   )
   .enablePlugins(WebsitePlugin)
