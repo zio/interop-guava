@@ -7,6 +7,8 @@
 
 This library provides an interoperability layer with [Guava](https://guava.dev/) 's [`com.google.common.util.concurrent.ListenableFuture`](https://github.com/google/guava/wiki/ListenableFutureExplained).
 
+- [ZIO Interop Guava Homepage](https://zio.dev/zio-interop-guava)
+
 [Badge-CI]: https://github.com/zio/interop-guava/workflows/CI/badge.svg
 [Badge-SonatypeReleases]: https://img.shields.io/nexus/r/https/oss.sonatype.org/dev.zio/zio-interop-guava_2.12.svg "Sonatype Releases"
 [Badge-SonatypeSnapshots]: https://img.shields.io/nexus/s/https/oss.sonatype.org/dev.zio/zio-interop-guava_2.12.svg "Sonatype Snapshots"

@@ -27,7 +27,7 @@ jobs:
       - name: Lint code
         run: ./sbt check
 
-  doc:
+  website:
     runs-on: ubuntu-20.04
     timeout-minutes: 30
     steps:
@@ -38,7 +38,7 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Check generation of ScalaDoc
-        run: ./sbt +Test/doc
+        run: ./sbt docs/compileDocs
 
   publishLocal:
     runs-on: ubuntu-20.04
@@ -59,7 +59,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        scala: ['2.11.12', '2.12.16', '2.13.8', '3.2.0']
+        scala: ['2.11.12', '2.12.17', '2.13.10', '3.2.1']
         platform: ['JVM']
     steps:
       - name: Checkout current branch
@@ -95,7 +95,7 @@ jobs:
 
   ci:
     runs-on: ubuntu-20.04
-    needs: [lint, doc, publishLocal, test, testJvms]
+    needs: [lint, website, publishLocal, test, testJvms]
     steps:
       - name: Aggregate of lint, and all tests
         run: echo "ci passed"

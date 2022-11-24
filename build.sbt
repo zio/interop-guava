@@ -3,7 +3,7 @@ import BuildHelper._
 inThisBuild(
   List(
     organization := "dev.zio",
-    homepage     := Some(url("https://zio.dev")),
+    homepage     := Some(url("https://zio.dev/zio-interop-guava")),
     licenses     := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     developers   := List(
       Developer(
@@ -19,7 +19,7 @@ inThisBuild(
 addCommandAlias("fix", "; all compile:scalafix test:scalafix; all scalafmtSbt scalafmtAll")
 addCommandAlias("check", "; scalafmtSbtCheck; scalafmtCheckAll; compile:scalafix --check; test:scalafix --check")
 
-val zioVersion = "2.0.2"
+val zioVersion = "2.0.4"
 
 lazy val guava = project
   .in(file("."))
@@ -36,3 +36,11 @@ lazy val guava = project
     )
   )
   .enablePlugins(BuildInfoPlugin)
+
+lazy val docs = project
+  .in(file("zio-interop-guava-docs"))
+  .settings(
+    publish / skip := true,
+    moduleName     := "zio-interop-guava-docs"
+  )
+  .enablePlugins(WebsitePlugin)
