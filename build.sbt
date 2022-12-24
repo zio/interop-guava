@@ -40,7 +40,15 @@ lazy val guava = project
 lazy val docs = project
   .in(file("zio-interop-guava-docs"))
   .settings(
-    publish / skip := true,
-    moduleName     := "zio-interop-guava-docs"
+    publish / skip    := true,
+    moduleName        := "zio-interop-guava-docs",
+    projectName       := "ZIO Interop Guava",
+    badgeInfo         := Some(
+      BadgeInfo(
+        artifact = "zio-interop-guava_2.12",
+        projectStage = ProjectStage.ProductionReady
+      )
+    ),
+    docsPublishBranch := "master"
   )
   .enablePlugins(WebsitePlugin)
