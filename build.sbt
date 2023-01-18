@@ -21,8 +21,11 @@ addCommandAlias("check", "; scalafmtSbtCheck; scalafmtCheckAll; compile:scalafix
 
 val zioVersion = "2.0.5"
 
+lazy val root =
+  project.in(file(".")).settings(publish / skip := true).aggregate(guava, docs)
+
 lazy val guava = project
-  .in(file("."))
+  .in(file("zio-interop-guava"))
   .enablePlugins(BuildInfoPlugin)
   .settings(stdSettings("zio-interop-guava"))
   .settings(buildInfoSettings("zio.interop.guava"))
@@ -40,15 +43,11 @@ lazy val guava = project
 lazy val docs = project
   .in(file("zio-interop-guava-docs"))
   .settings(
-    publish / skip    := true,
-    moduleName        := "zio-interop-guava-docs",
-    projectName       := "ZIO Interop Guava",
-    badgeInfo         := Some(
-      BadgeInfo(
-        artifact = "zio-interop-guava_2.12",
-        projectStage = ProjectStage.ProductionReady
-      )
-    ),
-    docsPublishBranch := "master"
+    moduleName                                 := "zio-interop-guava-docs",
+    projectName                                := "ZIO Interop Guava",
+    mainModuleName                             := (guava / moduleName).value,
+    projectStage                               := ProjectStage.ProductionReady,
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(guava),
+    docsPublishBranch                          := "master"
   )
   .enablePlugins(WebsitePlugin)
