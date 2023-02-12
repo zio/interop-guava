@@ -39,7 +39,7 @@ package object guava {
   }
 
   private def unwrapDone[A](isFatal: Throwable => Boolean)(f: ListenableFuture[A]): Task[A] =
-    try ZIO.succeedNow(f.get())
+    try Exit.succeed(f.get())
     catch catchFromGet(isFatal)
 
   def fromListenableFuture[A](make: juc.Executor => ListenableFuture[A])(implicit trace: Trace): Task[A] =
@@ -56,7 +56,7 @@ package object guava {
                   val fcb = new FutureCallback[A] {
                     def onFailure(t: Throwable): Unit = cb(catchFromGet(fatal).lift(t).getOrElse(ZIO.die(t)))
 
-                    def onSuccess(result: A): Unit = cb(ZIO.succeedNow(result))
+                    def onSuccess(result: A): Unit = cb(ZIO.succeed(result))
                   }
                   Futures.addCallback(lf, fcb, ex)
                   Left(ZIO.succeed(lf.cancel(false)))
@@ -93,7 +93,7 @@ package object guava {
           ZIO.fromListenableFuture(_ => lf).exit
 
         override def children(implicit trace: Trace): UIO[Chunk[Fiber.Runtime[_, _]]] =
-          ZIO.succeedNow(Chunk.empty)
+          ZIO.succeed(Chunk.empty)
 
         override def poll(implicit trace: Trace): UIO[Option[Exit[Throwable, A]]] =
           ZIO.suspendSucceed {
@@ -103,7 +103,7 @@ package object guava {
                 .fold(Exit.fail, Exit.succeed)
                 .map(Some(_))
             else
-              ZIO.succeedNow(None)
+              ZIO.succeed(None)
           }
 
         override def id: FiberId = FiberId.None
