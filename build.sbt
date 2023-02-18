@@ -19,7 +19,7 @@ inThisBuild(
 addCommandAlias("fix", "; all compile:scalafix test:scalafix; all scalafmtSbt scalafmtAll")
 addCommandAlias("check", "; scalafmtSbtCheck; scalafmtCheckAll; compile:scalafix --check; test:scalafix --check")
 
-val zioVersion = "2.0.5"
+val zioVersion = "2.0.9"
 
 lazy val root =
   project.in(file(".")).settings(publish / skip := true).aggregate(guava, docs)
